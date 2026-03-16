@@ -1,278 +1,190 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="mr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ToolxRP Solar System Lab</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Interactive Lab</title>
+    <style>
+        :root {
+            --bg-color: #05070a;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff;
+        }
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+        /* Header & Search Bar Section */
+        header {
+            width: 100%;
+            text-align: center;
+            padding: 20px 0;
+            z-index: 100;
+        }
 
-<style>
-body{margin:0;height:100vh;overflow:hidden;background:#020617;color:white;font-family:Outfit}
-canvas{display:block}
-.panel{background:rgba(15,23,42,.9);border:1px solid rgba(56,189,248,.3);border-radius:12px}
-</style>
+        .search-container {
+            margin-top: 15px;
+        }
+
+        input {
+            padding: 12px 25px;
+            width: 300px;
+            max-width: 80%;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--glass-bg);
+            color: white;
+            backdrop-filter: blur(10px);
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: #00d2ff;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+        }
+
+        /* Solar System Map */
+        #solar-system {
+            position: relative;
+            width: 100vw;
+            height: 80vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sun {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #ffcc33 20%, #ff8800 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 50px #ff8800;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .planet:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px white;
+        }
+
+        /* Planets Position & Size (Professional Adjustments) */
+        .mercury { width: 15px; height: 15px; background: #a5a5a5; left: calc(50% + 70px); }
+        .venus { width: 25px; height: 25px; background: #e3bb76; left: calc(50% + 110px); }
+        .earth { width: 28px; height: 28px; background: #2271b3; left: calc(50% + 160px); }
+        .mars { width: 20px; height: 20px; background: #e27b58; left: calc(50% + 210px); }
+        .jupiter { width: 55px; height: 55px; background: #d39c7e; left: calc(50% + 270px); }
+
+        .label {
+            position: absolute;
+            top: 100%;
+            font-size: 12px;
+            margin-top: 5px;
+            white-space: nowrap;
+        }
+
+        /* Info Box */
+        #info-box {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: none; /* सुरुवातीला लपवलेले */
+            text-align: center;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translate(-50%, 50px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .sun { width: 60px; height: 60px; }
+            #info-box { width: 85%; }
+            /* मोबाईलवर ग्रह धुसर दिसू नयेत म्हणून Crisp Rendering */
+            .planet { image-rendering: -webkit-optimize-contrast; }
+        }
+    </style>
 </head>
-
 <body>
 
-<canvas id="solar"></canvas>
+    <header>
+        <h1>Solar System Interactive Lab</h1>
+        <div class="search-container">
+            <input type="text" placeholder="ग्रह शोधा / Search planet..." id="searchInput">
+        </div>
+    </header>
 
-<div class="absolute top-6 left-1/2 -translate-x-1/2 text-center">
-<h1 class="text-xl font-bold">Solar System Interactive Lab</h1>
-<p class="text-xs text-sky-400">Accurate Educational Model</p>
-</div>
+    <div id="solar-system">
+        <div class="sun" onclick="showInfo('सूर्य', 'सूर्य हा आपल्या सौरमालेचा केंद्रबिंदू आहे. हा एक तारा आहे जो ऊर्जा आणि प्रकाश देतो.')"></div>
 
-<input id="search"
-class="absolute top-20 left-1/2 -translate-x-1/2 w-72 px-4 py-2 rounded-full bg-slate-800 text-sm"
-placeholder="ग्रह शोधा / Search planet">
+        <div class="planet mercury" onclick="showInfo('बुध', 'सौरमालेतील हा सर्वात लहान आणि सूर्याच्या सर्वात जवळचा ग्रह आहे.')">
+            <span class="label">बुध</span>
+        </div>
+        <div class="planet venus" onclick="showInfo('शुक्र', 'हा सौरमालेतील सर्वात उष्ण ग्रह आहे.')">
+            <span class="label">शुक्र</span>
+        </div>
+        <div class="planet earth" onclick="showInfo('पृथ्वी', 'आपले घर! हा एकमेव ग्रह आहे जिथे जीवसृष्टी अस्तित्वात आहे.')">
+            <span class="label">पृथ्वी</span>
+        </div>
+        <div class="planet mars" onclick="showInfo('मंगळ', 'याला लाल ग्रह म्हटले जाते कारण याच्या पृष्ठभागावर लोह ऑक्साईड आहे.')">
+            <span class="label">मंगळ</span>
+        </div>
+        <div class="planet jupiter" onclick="showInfo('गुरु', 'हा सौरमालेतील सर्वात मोठा ग्रह आहे.')">
+            <span class="label">गुरु</span>
+        </div>
+    </div>
 
-<div id="info" class="absolute right-6 top-1/2 -translate-y-1/2 w-80 panel p-5 hidden"></div>
+    <div id="info-box">
+        <h3 id="planet-name" style="color: #00d2ff;"></h3>
+        <p id="planet-desc"></p>
+        <button onclick="document.getElementById('info-box').style.display='none'" style="background:none; border:1px solid white; color:white; border-radius:5px; cursor:pointer;">बंद करा</button>
+    </div>
 
-<script>
+    <script>
+        function showInfo(name, desc) {
+            const box = document.getElementById('info-box');
+            document.getElementById('planet-name').innerText = name;
+            document.getElementById('planet-desc').innerText = desc;
+            box.style.display = 'block';
+        }
 
-const PLANETS=[
-{
-id:"sun",
-name:"सूर्य",
-search:["sun","surya"],
-emoji:"☀️",
-radius:50,
-color:"#fbbf24",
-orbit:0,
-speed:0,
-desc:"सूर्य हा G-type main sequence तारा आहे आणि संपूर्ण सौरमालेच्या 99.86% वस्तुमानाचा स्रोत आहे.",
-stats:{
-"प्रकार":"तारा",
-"व्यास":"1,391,000 km",
-"तापमान":"5500 °C",
-"वय":"4.6 अब्ज वर्ष"
-}
-},
-
-{
-id:"mercury",
-name:"बुध",
-search:["mercury","budh"],
-emoji:"🌑",
-radius:8,
-color:"#9ca3af",
-orbit:90,
-speed:1.6,
-desc:"सूर्याच्या सर्वात जवळचा ग्रह. वातावरण जवळजवळ नाही.",
-stats:{
-"सूर्यापासून अंतर":"57.9 million km",
-"वर्ष":"88 पृथ्वी दिवस",
-"दिवस":"176 पृथ्वी दिवस",
-"उपग्रह":"0"
-}
-},
-
-{
-id:"venus",
-name:"शुक्र",
-search:["venus","shukra"],
-emoji:"🌕",
-radius:14,
-color:"#fcd34d",
-orbit:130,
-speed:1.2,
-desc:"सौरमालेतील सर्वात उष्ण ग्रह. दाट CO₂ atmosphere मुळे greenhouse effect.",
-stats:{
-"तापमान":"465 °C",
-"वर्ष":"225 दिवस",
-"Rotation":"Retrograde",
-"उपग्रह":"0"
-}
-},
-
-{
-id:"earth",
-name:"पृथ्वी",
-search:["earth","prithvi"],
-emoji:"🌍",
-radius:15,
-color:"#3b82f6",
-orbit:180,
-speed:1,
-desc:"आपला ग्रह. सौरमालेतील जीवन असलेला एकमेव ज्ञात ग्रह.",
-stats:{
-"पाणी":"71%",
-"वर्ष":"365 दिवस",
-"चंद्र":"1",
-"Orbit speed":"29.78 km/s"
-}
-},
-
-{
-id:"mars",
-name:"मंगळ",
-search:["mars","mangal"],
-emoji:"🔴",
-radius:11,
-color:"#ef4444",
-orbit:230,
-speed:0.8,
-desc:"लाल ग्रह. येथे Olympus Mons हा सौरमालेतील सर्वात मोठा ज्वालामुखी आहे.",
-stats:{
-"वर्ष":"687 दिवस",
-"उपग्रह":"2",
-"ज्वालामुखी":"Olympus Mons",
-"तापमान":"-63 °C"
-}
-},
-
-{
-id:"jupiter",
-name:"गुरु",
-search:["jupiter","guru"],
-emoji:"🟠",
-radius:32,
-color:"#f97316",
-orbit:310,
-speed:0.5,
-desc:"सौरमालेतील सर्वात मोठा ग्रह. Gas giant.",
-stats:{
-"व्यास":"142,984 km",
-"उपग्रह":"95+",
-"वादळ":"Great Red Spot",
-"वर्ष":"11.8 पृथ्वी वर्ष"
-}
-},
-
-{
-id:"saturn",
-name:"शनी",
-search:["saturn","shani"],
-emoji:"🪐",
-radius:28,
-color:"#eab308",
-orbit:400,
-speed:0.4,
-desc:"त्याच्या सुंदर rings मुळे प्रसिद्ध.",
-stats:{
-"उपग्रह":"146",
-"वर्ष":"29 पृथ्वी वर्ष",
-"Density":"पाण्यापेक्षा कमी",
-"Rings":"Ice particles"
-}
-},
-
-{
-id:"uranus",
-name:"युरेनस",
-search:["uranus"],
-emoji:"💎",
-radius:20,
-color:"#22d3ee",
-orbit:480,
-speed:0.3,
-desc:"हा ग्रह अक्षावर 98° झुकलेला आहे.",
-stats:{
-"तापमान":"-224 °C",
-"वर्ष":"84 पृथ्वी वर्ष",
-"उपग्रह":"27",
-"प्रकार":"Ice Giant"
-}
-},
-
-{
-id:"neptune",
-name:"नेपच्यून",
-search:["neptune"],
-emoji:"🔵",
-radius:19,
-color:"#6366f1",
-orbit:550,
-speed:0.2,
-desc:"सौरमालेतील सर्वात वादळी ग्रह.",
-stats:{
-"वारा":"2100 km/h",
-"वर्ष":"165 पृथ्वी वर्ष",
-"उपग्रह":"14",
-"प्रकार":"Ice Giant"
-}
-}
-
-]
-
-const canvas=document.getElementById("solar")
-const ctx=canvas.getContext("2d")
-
-let w,h,time=0
-
-function resize(){
-w=canvas.width=window.innerWidth
-h=canvas.height=window.innerHeight
-}
-
-window.onresize=resize
-resize()
-
-function draw(){
-
-ctx.clearRect(0,0,w,h)
-
-PLANETS.forEach(p=>{
-
-let a=time*p.speed*0.01
-let x=Math.cos(a)*p.orbit
-let y=Math.sin(a)*p.orbit
-
-ctx.fillStyle=p.color
-ctx.beginPath()
-ctx.arc(w/2+x,h/2+y,p.radius,0,Math.PI*2)
-ctx.fill()
-
-ctx.fillStyle="white"
-ctx.font="10px Outfit"
-ctx.textAlign="center"
-ctx.fillText(p.name,w/2+x,h/2+y+p.radius+12)
-
-})
-
-time++
-
-requestAnimationFrame(draw)
-
-}
-
-draw()
-
-// SEARCH
-
-document.getElementById("search").oninput=e=>{
-
-let v=e.target.value.toLowerCase()
-
-let p = PLANETS.find(x =>
-  x.name.includes(v) ||
-  x.search.some(s => s.includes(v))
-)
-
-if(!p)return
-
-let html=`<h2 class="text-xl mb-2">${p.emoji} ${p.name}</h2>
-<p class="text-sm mb-3">${p.desc}</p>`
-
-for(let k in p.stats){
-
-html+=`<div class="flex justify-between text-xs border-b border-slate-700 py-1">
-<span class="text-sky-400">${k}</span>
-<span>${p.stats[k]}</span>
-</div>`
-
-}
-
-let box=document.getElementById("info")
-box.innerHTML=html
-box.style.display="block"
-
-}
-
-</script>
+        // सोपी सर्च सिस्टिम
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            let value = e.target.value.toLowerCase();
+            if(value === "earth" || value === "पृथ्वी") {
+                showInfo('पृथ्वी', 'आपले घर! हा एकमेव ग्रह आहे जिथे जीवसृष्टी अस्तित्वात आहे.');
+            }
+            // अश्या प्रकारे इतर ग्रहांचे सर्च लॉजिक वाढवता येईल
+        });
+    </script>
 </body>
 </html>
