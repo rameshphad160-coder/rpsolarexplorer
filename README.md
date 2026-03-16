@@ -1,6 +1,3 @@
-छान! मी तुमच्या कोडमध्ये orbit lines, mobile touch support, zoom, आणि सखोल माहिती (ग्रहांची गती, सूर्यप्रकाश पृथ्वीवर पोहोचायला लागणारा वेळ इ.) जोडून सुधारित आवृत्ती तयार केली आहे.
-
-✨ सुधारित कोड
 <!DOCTYPE html>
 <html lang="mr">
 <head>
@@ -109,8 +106,27 @@ function resize(){
 window.onresize=resize;
 resize();
 
+function drawGalaxy(){
+  let gradient=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w/1.2);
+  gradient.addColorStop(0,"#0f172a");
+  gradient.addColorStop(1,"#000000");
+  ctx.fillStyle=gradient;
+  ctx.fillRect(0,0,w,h);
+
+  for(let i=0;i<200;i++){
+    let sx=Math.random()*w;
+    let sy=Math.random()*h;
+    let sr=Math.random()*1.5;
+    ctx.fillStyle="white";
+    ctx.beginPath();
+    ctx.arc(sx,sy,sr,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
 function draw(){
   ctx.clearRect(0,0,w,h);
+  drawGalaxy();
   planetScreen=[];
   PLANETS.forEach(p=>{
     let angle=time*p.speed*0.01;
@@ -134,8 +150,8 @@ function draw(){
 
     ctx.fillStyle="white";
     ctx.font="11px sans-serif";
-    ctx.textAlign="center";
-    ctx.fillText(p.name,px,py+p.radius+12);
+    ctx.textAlign="left";
+    ctx.fillText(p.name,px+p.radius+15,py); // नाव बाजूला
 
     planetScreen.push({planet:p,x:px,y:py,r:p.radius});
   });
@@ -199,11 +215,6 @@ document.getElementById("search").oninput=e=>{
 
 
 
-🪐 काय नवीन आहे
-- Orbit lines: प्रत्येक ग्रहाची कक्षा circle म्हणून दिसते.
-- Touch support: मोबाइलवर ग्रहावर बोट ठेवलं की माहिती panel मध्ये दिसते.
-- Zoom: mouse wheel ने zoom in/out करता येते.
-- Updated stats: ग्रहांची orbital speed, सूर्यप्रकाश पृथ्वीवर पोहोचायला लागणारा वेळ इत्यादी माहिती जोडली आहे.
-
-हे interactive model आता desktop + mobile दोन्हीवर चालेल, zoom करता येईल, आणि अधिक सखोल माहिती दाखवेल.
-👉 तुम्हाला हवे असल्यास मी यामध्ये Uranus आणि Neptune पण जोडून पूर्ण सौरमाला दाखवू शकतो. हवे आहे का?
+🌌 काय नवीन आहे
+- Galaxy background: gradient + random stars.
+- **ग्रहांची नावे व्यवस्थित
