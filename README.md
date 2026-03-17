@@ -2,219 +2,271 @@
 <html lang="mr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>RP Solar System Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>RP Solar Lab</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
+
 body{
-  margin:0;
-  background:#020617;
-  color:white;
-  font-family:system-ui;
-  overflow:hidden;
+margin:0;
+background:#020617;
+color:white;
+font-family:sans-serif;
+overflow:hidden;
 }
-canvas{display:block;}
+
+/* STAR BACKGROUND */
+body::before{
+content:"";
+position:absolute;
+width:100%;
+height:100%;
+background:
+radial-gradient(2px 2px at 20% 30%, white, transparent),
+radial-gradient(2px 2px at 70% 60%, white, transparent),
+radial-gradient(1px 1px at 40% 80%, white, transparent);
+opacity:0.3;
+}
+
+/* ORBIT STYLE */
+.orbit{
+position:absolute;
+border:1px solid rgba(255,255,255,0.08);
+border-radius:50%;
+}
+
+/* PANEL */
 .panel{
-  background:rgba(15,23,42,.9);
-  border:1px solid rgba(56,189,248,.3);
-  border-radius:12px;
-  backdrop-filter:blur(10px);
+background:rgba(15,23,42,0.9);
+border:1px solid rgba(56,189,248,0.3);
+border-radius:14px;
+backdrop-filter:blur(12px);
 }
+
+/* CANVAS FIX */
+canvas{
+display:block;
+}
+
 </style>
+
 </head>
+
 <body>
 
+<!-- TITLE -->
+<div class="absolute top-5 left-1/2 -translate-x-1/2 text-center z-10">
+<h1 class="text-xl font-bold">Solar System Interactive Lab</h1>
+<p class="text-xs text-sky-400">Interactive Educational Model</p>
+
+<input id="search"
+class="mt-3 px-4 py-2 rounded-full bg-slate-800 text-sm"
+placeholder="Search planet / ग्रह शोधा">
+</div>
+
+<!-- RIGHT INFO PANEL -->
+<div id="infoPanel"
+class="absolute right-6 top-1/2 -translate-y-1/2 w-80 panel p-5">
+
+<h2 class="text-lg text-sky-400">ग्रह निवडा</h2>
+<p class="text-sm text-gray-400">Hover किंवा click करा</p>
+
+</div>
+
+<!-- CANVAS -->
 <canvas id="solar"></canvas>
 
-<div class="absolute top-6 left-1/2 -translate-x-1/2 text-center">
-  <h1 class="text-xl font-bold">Solar System Interactive Lab</h1>
-  <p class="text-xs text-sky-400">Interactive Educational Model</p>
-  <input id="search"
-    class="mt-3 px-4 py-2 rounded-full bg-slate-800 text-sm"
-    placeholder="ग्रह शोधा / Search planet">
-</div>
-
-<div id="info"
-  class="absolute right-6 top-1/2 -translate-y-1/2 w-80 panel p-4 hidden">
-</div>
-
 <script>
+
 const PLANETS=[
+
 {
-id:"sun",name:"सूर्य",search:["sun","surya"],emoji:"☀️",
-radius:40,color:"#fbbf24",orbit:0,speed:0,
-desc:"सूर्य हा सौरमालेचा केंद्रबिंदू आहे. सूर्यापासून पृथ्वीपर्यंत प्रकाश यायला सुमारे 8 मिनिटे 20 सेकंद लागतात.",
-stats:{प्रकार:"तारा",तापमान:"5500°C",व्यास:"1,391,000 km",वय:"4.6 अब्ज वर्ष"}
-},
-{
-id:"mercury",name:"बुध",search:["mercury","budh"],emoji:"🌑",
-radius:6,color:"#94a3b8",orbit:90,speed:1.6,
-desc:"बुध हा सूर्याच्या सर्वात जवळचा ग्रह आहे.",
-stats:{वर्ष:"88 दिवस",दिवस:"176 पृथ्वी दिवस",उपग्रह:"0",OrbitSpeed:"47.9 km/s"}
-},
-{
-id:"venus",name:"शुक्र",search:["venus","shukra"],emoji:"🌕",
-radius:10,color:"#fcd34d",orbit:130,speed:1.2,
-desc:"शुक्र हा सौरमालेतील सर्वात उष्ण ग्रह आहे.",
-stats:{तापमान:"465°C",वर्ष:"225 दिवस",उपग्रह:"0",OrbitSpeed:"35 km/s"}
-},
-{
-id:"earth",name:"पृथ्वी",search:["earth","prithvi"],emoji:"🌍",
-radius:11,color:"#3b82f6",orbit:180,speed:1,
-desc:"पृथ्वी हा एकमेव ग्रह आहे जिथे जीवन अस्तित्वात आहे. सूर्यप्रकाश पृथ्वीवर पोहोचायला 8 मिनिटे 20 सेकंद लागतात.",
-stats:{दिवस:"24 तास",वर्ष:"365 दिवस",उपग्रह:"1 (चंद्र)",OrbitSpeed:"29.78 km/s"}
-},
-{
-id:"mars",name:"मंगळ",search:["mars","mangal"],emoji:"🔴",
-radius:8,color:"#ef4444",orbit:230,speed:0.8,
-desc:"मंगळ हा लाल ग्रह म्हणून ओळखला जातो.",
-stats:{वर्ष:"687 दिवस",उपग्रह:"2",तापमान:"-63°C",OrbitSpeed:"24 km/s"}
-},
-{
-id:"jupiter",name:"गुरु",search:["jupiter","guru"],emoji:"🟠",
-radius:22,color:"#f97316",orbit:310,speed:0.4,
-desc:"गुरु हा सौरमालेतील सर्वात मोठा ग्रह आहे.",
-stats:{व्यास:"142,984 km",उपग्रह:"95+",प्रकार:"Gas Giant",OrbitSpeed:"13 km/s"}
-},
-{
-id:"saturn",name:"शनी",search:["saturn","shani"],emoji:"🪐",
-radius:20,color:"#eab308",orbit:380,speed:0.3,
-desc:"शनी हा सुंदर rings असलेला ग्रह आहे.",
-stats:{उपग्रह:"146",वर्ष:"29 पृथ्वी वर्ष",प्रकार:"Gas Giant",OrbitSpeed:"9.7 km/s"}
+id:"sun",
+name:"सूर्य",
+search:["sun","surya"],
+emoji:"☀️",
+r:40,
+c:"#fbbf24",
+or:0,
+sp:0,
+desc:"सूर्य हा सौरमालेचा केंद्रबिंदू आहे. प्रकाश पृथ्वीवर यायला 8 मिनिटे 20 सेकंद लागतात.",
+stats:{
+प्रकार:"तारा",
+तापमान:"5500°C",
+व्यास:"1.39 million km"
 }
-];
+},
 
-const canvas=document.getElementById("solar");
-const ctx=canvas.getContext("2d");
+{
+id:"earth",
+name:"पृथ्वी",
+search:["earth","prithvi"],
+emoji:"🌍",
+r:10,
+c:"#3b82f6",
+or:150,
+sp:1,
+desc:"पृथ्वी हा जीवन असलेला एकमेव ग्रह आहे.",
+stats:{
+पाणी:"71%",
+उपग्रह:"1",
+वर्ष:"365 दिवस"
+}
+},
 
-let w,h,time=0;
-let planetScreen=[];
-let scale=1;
+{
+id:"mars",
+name:"मंगळ",
+search:["mars","mangal","red"],
+emoji:"🔴",
+r:8,
+c:"#ef4444",
+or:220,
+sp:0.8,
+desc:"मंगळावर भविष्यात मानव राहू शकतो का यावर संशोधन चालू आहे.",
+stats:{
+वर्ष:"687 दिवस",
+उपग्रह:"2"
+}
+}
+
+]
+
+const canvas=document.getElementById("solar")
+const ctx=canvas.getContext("2d")
+
+let w,h,time=0
+let screen=[]
 
 function resize(){
-  const dpr=window.devicePixelRatio||1;
-  canvas.width=window.innerWidth*dpr;
-  canvas.height=window.innerHeight*dpr;
-  canvas.style.width=window.innerWidth+"px";
-  canvas.style.height=window.innerHeight+"px";
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  w=window.innerWidth;
-  h=window.innerHeight;
-}
-window.onresize=resize;
-resize();
 
-function drawGalaxy(){
-  let gradient=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w/1.2);
-  gradient.addColorStop(0,"#0f172a");
-  gradient.addColorStop(1,"#000000");
-  ctx.fillStyle=gradient;
-  ctx.fillRect(0,0,w,h);
+const dpr=window.devicePixelRatio||1
 
-  for(let i=0;i<200;i++){
-    let sx=Math.random()*w;
-    let sy=Math.random()*h;
-    let sr=Math.random()*1.5;
-    ctx.fillStyle="white";
-    ctx.beginPath();
-    ctx.arc(sx,sy,sr,0,Math.PI*2);
-    ctx.fill();
-  }
+canvas.width=innerWidth*dpr
+canvas.height=innerHeight*dpr
+
+canvas.style.width=innerWidth+"px"
+canvas.style.height=innerHeight+"px"
+
+ctx.setTransform(dpr,0,0,dpr,0,0)
+
+w=innerWidth
+h=innerHeight
+
 }
+
+resize()
+window.onresize=resize
 
 function draw(){
-  ctx.clearRect(0,0,w,h);
-  drawGalaxy();
-  planetScreen=[];
-  PLANETS.forEach(p=>{
-    let angle=time*p.speed*0.01;
-    let x=Math.cos(angle)*p.orbit;
-    let y=Math.sin(angle)*p.orbit;
-    let px=w/2+x;
-    let py=h/2+y;
 
-    // Orbit line
-    if(p.orbit>0){
-      ctx.strokeStyle="rgba(100,100,100,0.3)";
-      ctx.beginPath();
-      ctx.arc(w/2,h/2,p.orbit,0,Math.PI*2);
-      ctx.stroke();
-    }
+ctx.clearRect(0,0,w,h)
+screen=[]
 
-    ctx.fillStyle=p.color;
-    ctx.beginPath();
-    ctx.arc(px,py,p.radius,0,Math.PI*2);
-    ctx.fill();
+PLANETS.forEach(p=>{
 
-    ctx.fillStyle="white";
-    ctx.font="11px sans-serif";
-    ctx.textAlign="left";
-    ctx.fillText(p.name,px+p.radius+15,py); // नाव बाजूला
+let a=time*p.sp*0.01
 
-    planetScreen.push({planet:p,x:px,y:py,r:p.radius});
-  });
-  time++;
-  requestAnimationFrame(draw);
+let x=Math.cos(a)*p.or
+let y=Math.sin(a)*p.or
+
+let px=w/2+x
+let py=h/2+y
+
+// orbit
+if(p.or>0){
+ctx.strokeStyle="rgba(255,255,255,0.08)"
+ctx.beginPath()
+ctx.arc(w/2,h/2,p.or,0,Math.PI*2)
+ctx.stroke()
 }
-draw();
 
-// Hover (desktop)
+// planet
+ctx.fillStyle=p.c
+ctx.beginPath()
+ctx.arc(px,py,p.r,0,Math.PI*2)
+ctx.fill()
+
+// name
+ctx.fillStyle="white"
+ctx.font="10px sans-serif"
+ctx.textAlign="center"
+ctx.fillText(p.name,px,py+p.r+12)
+
+screen.push({p,px,py,r:p.r})
+
+})
+
+time++
+requestAnimationFrame(draw)
+
+}
+
+draw()
+
+// HOVER
 canvas.addEventListener("mousemove",e=>{
-  let mx=e.clientX,my=e.clientY;
-  for(let p of planetScreen){
-    let dx=mx-p.x,dy=my-p.y;
-    if(Math.sqrt(dx*dx+dy*dy)<p.r+5){showInfo(p.planet);return;}
-  }
-});
 
-// Touch (mobile)
-canvas.addEventListener("touchstart",e=>{
-  let touch=e.touches[0];
-  let mx=touch.clientX,my=touch.clientY;
-  for(let p of planetScreen){
-    let dx=mx-p.x,dy=my-p.y;
-    if(Math.sqrt(dx*dx+dy*dy)<p.r+5){showInfo(p.planet);return;}
-  }
-});
+let mx=e.clientX
+let my=e.clientY
 
-// Zoom (wheel)
-canvas.addEventListener("wheel",e=>{
-  e.preventDefault();
-  scale += e.deltaY * -0.001;
-  scale = Math.min(Math.max(.5, scale), 3);
-  ctx.setTransform(scale,0,0,scale,0,0);
-});
+for(let obj of screen){
 
-function showInfo(p){
-  let html=`<h2 class="text-lg mb-2">${p.emoji} ${p.name}</h2>
-  <p class="text-sm mb-2">${p.desc}</p>`;
-  for(let k in p.stats){
-    html+=`<div class="flex justify-between text-xs border-b border-slate-700 py-1">
-      <span class="text-sky-400">${k}</span>
-      <span>${p.stats[k]}</span>
-    </div>`;
-  }
-  let box=document.getElementById("info");
-  box.innerHTML=html;
-  box.style.display="block";
+let dx=mx-obj.px
+let dy=my-obj.py
+
+if(Math.sqrt(dx*dx+dy*dy)<obj.r+5){
+
+updatePanel(obj.p)
+return
+
 }
 
+}
+
+})
+
+// PANEL UPDATE
+function updatePanel(p){
+
+let html=`
+<h2 class="text-lg mb-2">${p.emoji} ${p.name}</h2>
+<p class="text-sm mb-3">${p.desc}</p>
+`
+
+for(let k in p.stats){
+
+html+=`
+<div class="flex justify-between text-xs border-b border-slate-700 py-1">
+<span class="text-sky-400">${k}</span>
+<span>${p.stats[k]}</span>
+</div>
+`
+
+}
+
+document.getElementById("infoPanel").innerHTML=html
+
+}
+
+// SEARCH
 document.getElementById("search").oninput=e=>{
-  let v=e.target.value.toLowerCase().trim();
-  let p=PLANETS.find(x=>
-    x.name.toLowerCase().includes(v)||
-    x.search.some(s=>s.includes(v))
-  );
-  if(p) showInfo(p);
-};
+
+let v=e.target.value.toLowerCase()
+
+let p=PLANETS.find(x=>
+x.name.toLowerCase().includes(v)||
+x.search.some(s=>s.includes(v))
+)
+
+if(p) updatePanel(p)
+
+}
+
 </script>
+
 </body>
 </html>
-
-
-
-🌌 काय नवीन आहे
-- Galaxy background: gradient + random stars.
-- **ग्रहांची नावे व्यवस्थित
